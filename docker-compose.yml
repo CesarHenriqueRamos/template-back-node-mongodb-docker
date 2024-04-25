@@ -1,31 +1,32 @@
 version: "3.1"
 services:
-  pgadmin:
-    image: dpage/pgadmin4
+  db:
+    image: mongo:4.2
+    container_name: db
     restart: always
     ports:
-      - 8000:80
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - ${DB_PORT}:27017
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
+
+  api:
+    image: node:latest
+    container_name: api
+    restart: always
+    env_file:
+     - .env
     depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:16
-    restart: always
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - db
     ports:
-      - 5432:5432
-    environment:
-      POSTGRES_DB: develop
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret
-      PGDATA: /var/lib/postgresql/data
-
-volumes:
-  postgres-data:
-  pgadmin-data:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    command: yarn start
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
